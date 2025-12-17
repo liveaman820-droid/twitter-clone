@@ -7,13 +7,15 @@ class AuthManager {
     }
 
     init() {
-        this.setupEventListeners();
-        this.checkAuthStatus();
+        this.setupModalHandlers();
+        this.setupFormHandlers();
+        this.checkAuthentication();
     }
 
-    setupEventListeners() {
-        // Modal controls
+    setupModalHandlers() {
         const loginBtn = document.getElementById('loginBtn');
+        const signInBtn = document.getElementById('signInBtn');
+        const getStartedBtn = document.getElementById('getStartedBtn');
         const loginModal = document.getElementById('loginModal');
         const registerModal = document.getElementById('registerModal');
         const closeLogin = document.getElementById('closeLogin');
@@ -21,74 +23,81 @@ class AuthManager {
         const showRegister = document.getElementById('showRegister');
         const showLogin = document.getElementById('showLogin');
 
-        // Login/Register forms
+        // Show login modal
+        if (loginBtn) loginBtn.addEventListener('click', () => this.showModal('login'));
+        if (signInBtn) signInBtn.addEventListener('click', () => this.showModal('login'));
+        if (getStartedBtn) getStartedBtn.addEventListener('click', () => this.showModal('register'));
+
+        // Close modals
+        if (closeLogin) closeLogin.addEventListener('click', () => this.hideModal('login'));
+        if (closeRegister) closeRegister.addEventListener('click', () => this.hideModal('register'));
+
+        // Switch between modals
+        if (showRegister) showRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.hideModal('login');
+            this.showModal('register');
+        });
+
+        if (showLogin) showLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.hideModal('register');
+            this.showModal('login');
+        });
+
+        // Close modal on backdrop click
+        if (loginModal) {
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) this.hideModal('login');
+            });
+        }
+
+        if (registerModal) {
+            registerModal.addEventListener('click', (e) => {
+                if (e.target === registerModal) this.hideModal('register');
+            });
+        }
+    }
+
+    setupFormHandlers() {
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
 
-        // Profile menu
-        const profileMenu = document.getElementById('profileMenu');
-        const dropdownMenu = document.getElementById('dropdownMenu');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+        }
+
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => this.handleRegister(e));
+        }
+
+        // Setup logout
         const logoutLink = document.getElementById('logoutLink');
+        if (logoutLink) {
+            logoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleLogout();
+            });
+        }
+    }
 
-        // Event listeners
-        loginBtn?.addEventListener('click', () => this.showLoginModal());
-        closeLogin?.addEventListener('click', () => this.hideLoginModal());
-        closeRegister?.addEventListener('click', () => this.hideRegisterModal());
-        showRegister?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showRegisterModal();
-        });
-        showLogin?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showLoginModal();
-        });
-
-        loginForm?.addEventListener('submit', (e) => this.handleLogin(e));
-        registerForm?.addEventListener('submit', (e) => this.handleRegister(e));
-
-        profileMenu?.addEventListener('click', () => this.toggleDropdown());
-        logoutLink?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.handleLogout();
-        });
-
-        // Close modals when clicking outside
-        window.addEventListener('click', (e) => {
-            if (e.target === loginModal) this.hideLoginModal();
-            if (e.target === registerModal) this.hideRegisterModal();
-            if (!profileMenu?.contains(e.target)) {
-                dropdownMenu?.classList.remove('show');
+    showModal(type) {
+        const modal = document.getElementById(type === 'login' ? 'loginModal' : 'registerModal');
+        if (modal) {
+            modal.style.display = 'block';
+            // Focus on first input
+            const firstInput = modal.querySelector('input');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 100);
             }
-        });
+        }
     }
 
-    showLoginModal() {
-        const modal = document.getElementById('loginModal');
-        const registerModal = document.getElementById('registerModal');
-        registerModal.style.display = 'none';
-        modal.style.display = 'block';
-    }
-
-    hideLoginModal() {
-        const modal = document.getElementById('loginModal');
-        modal.style.display = 'none';
-    }
-
-    showRegisterModal() {
-        const modal = document.getElementById('registerModal');
-        const loginModal = document.getElementById('loginModal');
-        loginModal.style.display = 'none';
-        modal.style.display = 'block';
-    }
-
-    hideRegisterModal() {
-        const modal = document.getElementById('registerModal');
-        modal.style.display = 'none';
-    }
-
-    toggleDropdown() {
-        const dropdown = document.getElementById('dropdownMenu');
-        dropdown.classList.toggle('show');
+    hideModal(type) {
+        const modal = document.getElementById(type === 'login' ? 'loginModal' : 'registerModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
 
     async handleLogin(e) {
@@ -103,7 +112,10 @@ class AuthManager {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({
+                    username,
+                    password
+                })
             });
 
             const data = await response.json();
@@ -111,14 +123,9 @@ class AuthManager {
             if (data.success) {
                 this.currentUser = data.user;
                 this.isAuthenticated = true;
-                this.updateUI();
-                this.hideLoginModal();
-                this.showNotification('Successfully logged in!', 'success');
-                
-                // Refresh the page content
-                if (window.twitterApp) {
-                    window.twitterApp.loadTweets();
-                }
+                this.hideModal('login');
+                this.showNotification('Welcome back!', 'success');
+                window.location.href = '/home';
             } else {
                 this.showNotification(data.message || 'Login failed', 'error');
             }
@@ -136,13 +143,24 @@ class AuthManager {
         const email = document.getElementById('registerEmail').value;
         const password = document.getElementById('registerPassword').value;
 
+        // Basic validation
+        if (password.length < 6) {
+            this.showNotification('Password must be at least 6 characters long', 'error');
+            return;
+        }
+
         try {
             const response = await fetch('/api/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ display_name: displayName, username, email, password })
+                body: JSON.stringify({
+                    display_name: displayName,
+                    username,
+                    email,
+                    password
+                })
             });
 
             const data = await response.json();
@@ -150,14 +168,9 @@ class AuthManager {
             if (data.success) {
                 this.currentUser = data.user;
                 this.isAuthenticated = true;
-                this.updateUI();
-                this.hideRegisterModal();
+                this.hideModal('register');
                 this.showNotification('Account created successfully!', 'success');
-                
-                // Refresh the page content
-                if (window.twitterApp) {
-                    window.twitterApp.loadTweets();
-                }
+                window.location.href = '/home';
             } else {
                 this.showNotification(data.message || 'Registration failed', 'error');
             }
@@ -179,81 +192,30 @@ class AuthManager {
             if (response.ok) {
                 this.currentUser = null;
                 this.isAuthenticated = false;
-                this.updateUI();
-                this.showNotification('Successfully logged out!', 'success');
-                
-                // Clear the tweet feed
-                if (window.twitterApp) {
-                    window.twitterApp.clearFeed();
-                }
+                this.showNotification('Logged out successfully', 'success');
+                window.location.href = '/';
             }
         } catch (error) {
             console.error('Logout error:', error);
-            this.showNotification('Logout failed. Please try again.', 'error');
+            this.showNotification('Logout failed', 'error');
         }
     }
 
-    checkAuthStatus() {
-        // In a real app, you'd check with the server
-        // For now, we'll assume user is not authenticated initially
-        this.updateUI();
-    }
-
-    updateUI() {
-        const loginBtn = document.getElementById('loginBtn');
-        const profileMenu = document.getElementById('profileMenu');
-        const currentUserImg = document.getElementById('currentUserImg');
-        const currentUserName = document.getElementById('currentUserName');
-        const composeSection = document.getElementById('composeSection');
-
-        if (this.isAuthenticated && this.currentUser) {
-            // Hide login button, show profile menu
-            loginBtn.style.display = 'none';
-            profileMenu.style.display = 'flex';
-            
-            // Update user info
-            currentUserImg.src = this.currentUser.avatar;
-            currentUserName.textContent = this.currentUser.display_name;
-            
-            // Show compose section
-            composeSection.style.display = 'flex';
-            
-            // Update compose avatar
-            const composeAvatar = document.querySelector('.compose-tweet .avatar');
-            if (composeAvatar) {
-                composeAvatar.src = this.currentUser.avatar;
-            }
-        } else {
-            // Show login button, hide profile menu
-            loginBtn.style.display = 'block';
-            profileMenu.style.display = 'none';
-            
-            // Hide compose section
-            composeSection.style.display = 'none';
-        }
+    checkAuthentication() {
+        // This will be called to check if user is authenticated
+        // In a real app, you might check a JWT token or session
     }
 
     showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        
-        document.body.appendChild(notification);
-        
-        // Show notification
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 100);
-        
-        // Hide and remove notification
-        setTimeout(() => {
-            notification.classList.remove('show');
+        const notification = document.getElementById('notification');
+        if (notification) {
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
             setTimeout(() => {
-                if (document.body.contains(notification)) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
+                notification.classList.remove('show');
+            }, 3000);
+        }
     }
 
     getCurrentUser() {
@@ -266,4 +228,9 @@ class AuthManager {
 }
 
 // Initialize auth manager
-window.authManager = new AuthManager();
+const authManager = new AuthManager();
+
+// Export for use in other files
+if (typeof window !== 'undefined') {
+    window.authManager = authManager;
+}
