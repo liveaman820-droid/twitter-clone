@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Clone</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Sign in to Twitter</h2>
+                <span class="close" id="closeLogin">&times;</span>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <input type="text" id="loginUsername" placeholder="Username" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="Password" required>
+                </div>
+                <button type="submit" class="auth-btn">Sign In</button>
+            </form>
+            <p class="auth-switch">Don't have an account? <a href="#" id="showRegister">Sign up</a></p>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create your account</h2>
+                <span class="close" id="closeRegister">&times;</span>
+            </div>
+            <form id="registerForm">
+                <div class="form-group">
+                    <input type="text" id="registerDisplayName" placeholder="Display Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="registerUsername" placeholder="Username" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="registerEmail" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPassword" placeholder="Password" required>
+                </div>
+                <button type="submit" class="auth-btn">Create Account</button>
+            </form>
+            <p class="auth-switch">Already have an account? <a href="#" id="showLogin">Sign in</a></p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fab fa-twitter"></i>
+                <span>Twitter</span>
+            </div>
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search Twitter" id="searchInput">
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="profile-menu" id="profileMenu">
+                    <img src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?w=50&h=50&fit=crop&crop=face" alt="Profile" class="profile-img" id="currentUserImg">
+                    <span id="currentUserName">Guest</span>
+                    <i class="fas fa-chevron-down"></i>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="#" id="profileLink"><i class="fas fa-user"></i> Profile</a>
+                        <a href="#" id="settingsLink"><i class="fas fa-cog"></i> Settings</a>
+                        <a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+                <button class="login-btn" id="loginBtn">Sign In</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Sidebar -->
+        <aside class="sidebar-left">
+            <nav class="nav-menu">
+                <div class="nav-item active" data-page="home">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </div>
+                <div class="nav-item" data-page="explore">
+                    <i class="fas fa-hashtag"></i>
+                    <span>Explore</span>
+                </div>
+                <div class="nav-item" data-page="notifications">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                    <span class="notification-count">3</span>
+                </div>
+                <div class="nav-item" data-page="messages">
+                    <i class="fas fa-envelope"></i>
+                    <span>Messages</span>
+                </div>
+                <div class="nav-item" data-page="bookmarks">
+                    <i class="fas fa-bookmark"></i>
+                    <span>Bookmarks</span>
+                </div>
+                <div class="nav-item" data-page="lists">
+                    <i class="fas fa-list"></i>
+                    <span>Lists</span>
+                </div>
+                <div class="nav-item" data-page="profile">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </div>
+                <div class="nav-item" data-page="analytics">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </div>
+                <div class="nav-item" data-page="more">
+                    <i class="fas fa-ellipsis-h"></i>
+                    <span>More</span>
+                </div>
+            </nav>
+            <button class="tweet-btn" id="tweetBtn">
+                <i class="fas fa-feather"></i>
+                <span>Tweet</span>
+            </button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Tweet Composer -->
+            <div class="tweet-composer">
+                <div class="composer-header">
+                    <h2 id="pageTitle">Home</h2>
+                    <div class="composer-actions">
+                        <button class="icon-btn" id="refreshBtn" title="Refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="compose-tweet" id="composeSection">
+                    <img src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?w=50&h=50&fit=crop&crop=face" alt="Your avatar" class="avatar">
+                    <div class="compose-content">
+                        <textarea placeholder="What's happening?" id="tweetText" maxlength="280"></textarea>
+                        <div class="compose-actions">
+                            <div class="compose-options">
+                                <button class="option-btn" title="Add photo" id="addPhotoBtn">
+                                    <i class="fas fa-image"></i>
+                                </button>
+                                <button class="option-btn" title="Add GIF">
+                                    <i class="fas fa-film"></i>
+                                </button>
+                                <button class="option-btn" title="Add poll">
+                                    <i class="fas fa-poll"></i>
+                                </button>
+                                <button class="option-btn" title="Add emoji" id="emojiBtn">
+                                    <i class="fas fa-smile"></i>
+                                </button>
+                                <button class="option-btn" title="Schedule">
+                                    <i class="fas fa-calendar"></i>
+                                </button>
+                                <button class="option-btn" title="Add location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </button>
+                            </div>
+                            <div class="compose-submit">
+                                <div class="character-count">
+                                    <svg class="progress-ring" width="20" height="20">
+                                        <circle class="progress-ring-circle" cx="10" cy="10" r="8" fill="transparent" stroke="#e1e8ed" stroke-width="2"/>
+                                        <circle class="progress-ring-progress" cx="10" cy="10" r="8" fill="transparent" stroke="#1da1f2" stroke-width="2"/>
+                                    </svg>
+                                    <span id="charCount">280</span>
+                                </div>
+                                <button class="tweet-submit-btn" id="submitTweet" disabled>Tweet</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Tweet Feed -->
+                <div class="tweet-feed" id="tweetFeed">
+                    <!-- Tweets will be dynamically loaded here -->
+                </div>
+
+                <!-- Profile Section (hidden by default) -->
+                <div class="profile-section" id="profileSection" style="display: none;">
+                    <div class="profile-header">
+                        <div class="profile-cover"></div>
+                        <div class="profile-info">
+                            <img src="" alt="Profile" class="profile-avatar" id="profileAvatar">
+                            <div class="profile-details">
+                                <h2 id="profileDisplayName">User Name</h2>
+                                <p id="profileUsername">@username</p>
+                                <p id="profileBio">User bio goes here...</p>
+                                <div class="profile-meta">
+                                    <span><i class="fas fa-calendar"></i> Joined <span id="profileJoinDate">March 2020</span></span>
+                                    <span><i class="fas fa-map-marker-alt"></i> <span id="profileLocation">Location</span></span>
+                                    <span><i class="fas fa-link"></i> <a href="#" id="profileWebsite">website.com</a></span>
+                                </div>
+                                <div class="profile-stats">
+                                    <span><strong id="profileFollowing">0</strong> Following</span>
+                                    <span><strong id="profileFollowers">0</strong> Followers</span>
+                                </div>
+                            </div>
+                            <button class="follow-profile-btn" id="followProfileBtn">Follow</button>
+                        </div>
+                    </div>
+                    <div class="profile-tabs">
+                        <button class="tab-btn active" data-tab="tweets">Tweets</button>
+                        <button class="tab-btn" data-tab="replies">Tweets & replies</button>
+                        <button class="tab-btn" data-tab="media">Media</button>
+                        <button class="tab-btn" data-tab="likes">Likes</button>
+                    </div>
+                    <div class="profile-content" id="profileContent">
+                        <!-- Profile tweets will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Analytics Section -->
+                <div class="analytics-section" id="analyticsSection" style="display: none;">
+                    <div class="analytics-header">
+                        <h2>Analytics</h2>
+                        <p>Track your Twitter performance</p>
+                    </div>
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <h3>Tweet Impressions</h3>
+                            <div class="analytics-number">12.5K</div>
+                            <div class="analytics-change positive">+15.2%</div>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Profile Visits</h3>
+                            <div class="analytics-number">3.2K</div>
+                            <div class="analytics-change positive">+8.7%</div>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Mentions</h3>
+                            <div class="analytics-number">156</div>
+                            <div class="analytics-change negative">-2.1%</div>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Followers</h3>
+                            <div class="analytics-number">1.2K</div>
+                            <div class="analytics-change positive">+12.3%</div>
+                        </div>
+                    </div>
+                    <div class="analytics-chart">
+                        <h3>Tweet Performance (Last 7 days)</h3>
+                        <canvas id="performanceChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="sidebar-right">
+            <!-- Trending -->
+            <div class="widget trending-widget">
+                <h3>What's happening</h3>
+                <div class="trending-item">
+                    <div class="trending-category">Trending in Technology</div>
+                    <div class="trending-topic">#JavaScript</div>
+                    <div class="trending-tweets">42.1K Tweets</div>
+                </div>
+                <div class="trending-item">
+                    <div class="trending-category">Trending</div>
+                    <div class="trending-topic">#WebDevelopment</div>
+                    <div class="trending-tweets">28.5K Tweets</div>
+                </div>
+                <div class="trending-item">
+                    <div class="trending-category">Trending in Programming</div>
+                    <div class="trending-topic">#CSS</div>
+                    <div class="trending-tweets">15.2K Tweets</div>
+                </div>
+                <div class="trending-item">
+                    <div class="trending-category">Trending</div>
+                    <div class="trending-topic">#HTML</div>
+                    <div class="trending-tweets">9.8K Tweets</div>
+                </div>
+                <div class="trending-item">
+                    <div class="trending-category">Trending in Tech</div>
+                    <div class="trending-topic">#ReactJS</div>
+                    <div class="trending-tweets">35.7K Tweets</div>
+                </div>
+                <div class="show-more">
+                    <a href="#">Show more</a>
+                </div>
+            </div>
+
+            <!-- Who to follow -->
+            <div class="widget follow-widget">
+                <h3>Who to follow</h3>
+                <div id="suggestedUsers">
+                    <!-- Suggested users will be loaded here -->
+                </div>
+                <div class="show-more">
+                    <a href="#">Show more</a>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="widget footer-widget">
+                <div class="footer-links">
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Cookie Policy</a>
+                    <a href="#">Accessibility</a>
+                    <a href="#">Ads info</a>
+                    <a href="#">More</a>
+                </div>
+                <p>&copy; 2024 Twitter Clone</p>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="mobile-nav">
+        <div class="mobile-nav-item active" data-page="home">
+            <i class="fas fa-home"></i>
+        </div>
+        <div class="mobile-nav-item" data-page="explore">
+            <i class="fas fa-hashtag"></i>
+        </div>
+        <div class="mobile-nav-item" data-page="notifications">
+            <i class="fas fa-bell"></i>
+        </div>
+        <div class="mobile-nav-item" data-page="messages">
+            <i class="fas fa-envelope"></i>
+        </div>
+    </div>
+
+    <!-- Emoji Picker -->
+    <div class="emoji-picker" id="emojiPicker" style="display: none;">
+        <div class="emoji-grid">
+            <span class="emoji" data-emoji="😀">😀</span>
+            <span class="emoji" data-emoji="😂">😂</span>
+            <span class="emoji" data-emoji="😍">😍</span>
+            <span class="emoji" data-emoji="🤔">🤔</span>
+            <span class="emoji" data-emoji="👍">👍</span>
+            <span class="emoji" data-emoji="❤️">❤️</span>
+            <span class="emoji" data-emoji="🔥">🔥</span>
+            <span class="emoji" data-emoji="💯">💯</span>
+            <span class="emoji" data-emoji="🚀">🚀</span>
+            <span class="emoji" data-emoji="⭐">⭐</span>
+            <span class="emoji" data-emoji="🎉">🎉</span>
+            <span class="emoji" data-emoji="💡">💡</span>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/database.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/darkmode.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
